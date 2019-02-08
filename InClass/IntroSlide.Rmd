@@ -1,0 +1,34 @@
+---
+title: "Introductory Slide"
+author: "Mac Faldet"
+date: "January 28, 2019"
+output:
+  pdf_document:
+    keep_tex: yes
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Information
+
+<!-- This is a comment.  If you want a digital copy of the sheet handed out in class go to the help menu and select Cheatsheets->R Markdown Cheat Sheet -->
+
+<!-- This is a table. Fill in the information for you-->
+
+| Topic  | Information|
+|--------|------------|
+| Name   | Mac Faldet |
+| Major  | Mathematics/Business Analytics |
+| Hometown | Calmar, IA |
+| Hobbies | Swimming, Guitar, Piano |
+
+
+<!-- Put a relatively recent picture here where you can see your face well -->
+
+
+![I don't take a lot of photos, but here's me and my mom over Christmas.](Christmas.jpg)
+
