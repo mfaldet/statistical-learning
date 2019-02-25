@@ -1,0 +1,64 @@
+---
+title: "February 11"
+author: "Matt Rissler"
+date: "February 11, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggformula)
+library(ISLR)
+```
+
+## Advertising
+
+```{r}
+Advertising <- read_csv("http://www-bcf.usc.edu/~gareth/ISL/Advertising.csv")
+Advertising %>% select(-X1) -> Advertising
+```
+
+```{r}
+model1 <- Advertising %>% lm(sales ~ TV, data = .) 
+summary(model1)
+gf_point(sales ~ TV, data = Advertising) %>% gf_lm(interval = "confidence")
+
+```
+
+```{r}
+
+model2 <- Advertising %>% lm(sales ~  . , data = .) 
+summary(model2)
+
+```
+
+
+```{r}
+require(MASS)
+ lm(sales ~ ., data = Advertising) %>% step()
+```
+
+
+```{r}
+str(Boston)
+
+Boston %>% 
+  mutate(chas = factor(chas, labels = c("No river", "River"))) %>%
+  mutate(rad = factor(rad)) ->
+  BostonFactored
+
+glimpse(BostonFactored)
+
+```
+
+
+```{r}
+fitmin<- lm( medv ~ 1, data=BostonFactored)
+fitmax <- lm(medv ~ . , data=BostonFactored)
+
+lm(medv ~ age + indus, data = BostonFactored) %>% 
+  stepAIC(scope = list(upper=fitmax, lower = fitmin),
+          direction = "both") %>% summary()
+
+```

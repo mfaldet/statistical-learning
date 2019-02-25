@@ -1,0 +1,67 @@
+---
+title: "Newton's Method"
+author: "Matt Rissler"
+date: "February 20, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+## Newton's Method for Sine
+
+Find root of $f(x)=\sin(x)$ near $x=3$.
+
+```{r defineFunction}
+newt <- function(x){
+  return( x - sin(x)/cos(x) )
+}
+```
+
+
+```{r}
+x=3; x
+x=newt(x); x
+x=newt(x); x
+```
+
+
+```{r}
+rissler <- function(x){
+  return(sin(x)^2)
+}
+
+risslerp <- function(x){
+  return(2*sin(x)*cos(x))
+}
+
+newtf <- function(f, fp, x){
+  return(x-f(x)/fp(x))
+}
+
+```
+
+```{r}
+x=7; x
+x_new=x;x_old=0
+i=0;
+while( !near(x_old,x_new) ){
+  x_old = x_new
+  x_new = newtf(rissler,risslerp,x_new)
+  i=i+1
+  print(c(x_new,i))
+}
+
+
+```
+
+
+```{r}
+library(ggformula)
+
+gf_function(rissler,xlim=c(0,10) ) %>% gf_point(y~x, data=data.frame(x=c(7), y=c(rissler(7))))
+
+
+```

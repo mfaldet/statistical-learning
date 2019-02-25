@@ -1,0 +1,33 @@
+---
+title: "Feb11"
+author: "Mac Faldet"
+date: "February 11, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggformula)
+```
+
+## Advertising
+
+```{r import}
+Advertising <- read_csv("Raw Data/Advertising.csv")
+head(Advertising)
+```
+
+```{r mod1}
+model1 <- Advertising %>% lm(sales ~ TV, data=.)
+summary(model1)
+gf_point(sales ~ TV, data = Advertising) %>% gf_lm(interval = "confidence")
+```
+
+
+```{r mod2}
+model2 <- Advertising %>% lm(sales ~ TV + radio + newspaper, data=.)
+summary(model2)
+gf_point(sales ~ TV, data = Advertising) %>% gf_lm(interval = "confidence")
+```
+

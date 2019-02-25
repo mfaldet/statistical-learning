@@ -5,27 +5,161 @@ date: "January 28, 2019"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+# Welcome
+## This is an Introduction to R and R Markdown
+
+In this example we will be using the Iris dataset which is already downloaded to your system. 
+
+Code chunks are contained within three consecutive tilde's. 
+Within the brackets is:
+    1st - type of code chunk
+    2nd - name of this chunk
+    3rd - unique settings for this code chunk environment
+    
+Name your code chunks so that you may reference them later and have all the settings carry over.
+
+```{r customSetup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+Above is the default preference when you open a new Rmarkdown document. 
+To check out other customizable preferences for code chunks, run the following in an actual code chunk.   
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+"``{r options}
+knitr::opts_chunk$get()
+"``
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Here's few good functions to run to understand your data better:
 
-```{r load}
+```{r chunckName, echo=FALSE}
+#call the statistics summary of Iris
 summary(iris)
+
+#view the first 6 rows of Iris
+head(iris)
+
+#view the last 10 rows of Iris
+tail(iris, nrow = 10)
 ```
 
-## Including Plots
+Lets look at some simple plots provided by functions given by base r.
 
-You can also embed plots, for example:
+```{r plots}
+#Check out the help window in the bottom left for more about plots.
+?plot
 
-```{r pictures, echo=FALSE}
-ggplot2(iris, aes(x=Sepal.Length, y=Sepal.Width))
+# plot iris data with titles
+plot(x=iris$Sepal.Length, y=iris$Sepal.Width, main="Iris Species", xlab="Sepal Length", ylab="Sepal Width", groups=iris$Species)
 
+plot(x=iris$Species, y=iris$Sepal.Length, type="h", main="Iris Species Count", ylab="Sepal Length")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+you can also use the `par()` function to split the graphical window, and put multiple graphs side by side.
+```{r}
+# plot with reduced margin and character sizes
+par(mfrow = c(2,1), mex = 0.8, cex = 0.9)
+plot(x=iris$Petal.Length, y=iris$Sepal.Length, main="Length Comparison", xlab="Petal", ylab="Sepal")
+plot(x=iris$Petal.Width, y=iris$Sepal.Width, main="Width Comparison", xlab="Petal", ylab="Sepal")
+```
+
+It is often good practice to include the stats package for easy plotting of aggregations or statistical summaries.
+```{r stat}
+require(stats) # for lowess, rpois, rnorm
+plot(iris)
+lines(lowess(iris))
+plot(sin, -pi, 2*pi) # see ?plot.function
+```
+
+Notice the variables going down the diagnol. 
+The lowess lines makes it easy to see correlations between variables.
+
+Correlations are very important, however the best way to compare correlations between variables is by throwing your numeric data into a correlation plot `corr()` provided by the `corrplot` package.
+```{r correlationLoad, echo=F}
+#Install corrplot package:
+#install.packages("corrplot")
+library(corrplot)
+```
+
+```{r correlation}
+#index your numeric variables in your data set to pull them out for visualization
+numeric_index <- is.numeric(iris)
+iris_numeric <- iris[numeric_index,]
+
+#view the coefficient matrix of variable eigenvalues to view the variable's correlations
+I <- cor(iris_numerics)
+head(round(I,2))
+
+#plot this matrix to get more intuition about the relations
+corrplot(I, method = "circle")
+```
+
+
+## Advanced Plots with ggplot2
+
+If you need to download a package at any point, include [ install.packages(`desired_package`) ] in a code chunk.
+
+For instance, we will use the `ggplot2` package. So you may need to run this below:    install.packages(ggplot2)
+
+```{r install}
+library(ggplot2)
+```
+
+To get a better understanding of the different flower types, lets stratify and compare their characteristics
+
+```{r gg_sepals}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_jitter(alpha = 0.5) +
+  stat_smooth(method = "lm", show.legend = T, col = "black") +
+  coord_equal()
+
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_jitter(alpha = 0.5) +
+  facet_wrap(. ~ Species) +
+  stat_smooth(method = "lm", se = F, fullrange = T, inherit.aes = T, col = "black") +
+  coord_equal()
+```
+
+```{r gg_petals}
+ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_jitter(alpha = 0.5) +
+  stat_smooth(method = "lm", show.legend = T, col = "black") +
+  coord_equal()
+
+#Look at coord_equal to see the actual slope, it just minimizes the height of the graph so I left it off
+ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_jitter(alpha = 0.5) +
+  facet_wrap(. ~ Species) +
+  stat_smooth(method = "lm", se = F, fullrange = T, inherit.aes = T, col = "black")# +
+#  coord_equal()
+```
+
+
+
+
+
+
+## Case Study to Normalize Data
+
+```{r packages needed to continue, echo=F}
+?normalize
+library(purrr)
+library(BBmisc)
+library(tidyverse)
+```
+
+```{r normalized comparison}
+iris_numerics <- select(iris, -Species)
+iris_normalized <- sapply(iris_numerics, normalize, method = "standardize")
+head(iris_normalized)
+iris_norm <- merge(iris_normalized, iris$Species)
+colnames(iris_norm) <- c("Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species")
+head(iris_norm)
+```
+
+```{r advanced ggplots}
+ggplot(iris_norm, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_line(alpha = 0.5) +
+  facet_wrap(. ~ Species) +
+  stat_smooth(method = "lm", se = F, fullrange = T, inherit.aes = T, col = "black") +
+  coord_equal()
+```
