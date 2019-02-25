@@ -1,0 +1,134 @@
+---
+title: "Ch3 Homework"
+author: "Mac Faldet"
+date: "February 24, 2019"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ISLR)
+library(MASS)
+```
+
+## Chapter 3 Homework
+
+### Question 4
+
+The scenario:
+  `n` = 100
+  Linear Regression Model
+  Cubic Regression Model
+  
+(a) If there is a linear relationship between X and Y, would we expect a model to perform better on training RSS?
+
+  - We would expect the cubic regressino to tighter fit our wide range of data. Thus the cubic regression would have a lower training RSS than the linear model.
+  
+(b) Answer (a) using test rather than training RSS.
+
+  - Now we would expect the linear model to have a lower RSS since it would fit the inherent relaitonship between the variables best. The tight fit from the cubic function would prove to be overfitting and have a higher RSS on the test data.
+
+(c) Suppose that the true relationship between X and Y is not perfectly linear. Consider training RSS for the models. Do we know enough to expect one to perform better?
+
+  - Regardless of what the true underlying relationship is, the cubic regression model will always fit our training data with a lower RSS than the linear regression model training RSS.
+
+(d) Answer (c) using test data.
+
+  - We don't know enough.
+  
+
+### Question 8
+
+The question involves the use of simple linear regression on the `Auto` data set.
+
+(a) Use the `lm()` function to perfomr a slr with `mpg` as the response and `horsepower` as the predictor. Use the `summary()` function to print the results. Comment on the output.
+
+```{r 8a}
+summary(Auto)
+mod1 <- lm(data = Auto, formula = mpg ~ horsepower)
+summary(mod1)
+```
+  i. Given a P-value < .05 we can assert there is a significant relationship between horsepower and mpg.
+  ii. An R^2 of .606 means over 60% of the variance in mpg is explained by horsepower.
+  iii. The relationship between the two is negative. More horsepower, less mpg.
+  iv. 
+```{r 8av}
+predict(mod1, data.frame(horsepower=c(98)), interval="confidence")
+predict(mod1, data.frame(horsepower=c(98)), interval="prediction")
+```
+
+(b) 
+
+```{r 8b}
+plot(x = Auto$horsepower, y = Auto$mpg)
+abline(mod1)
+```
+
+(c) None have perfectly linear relationships. 
+
+```{r 8c}
+par(mfrow=c(2,2))
+plot(mod1)
+```
+
+
+### Question 9
+
+(a)
+
+```{r 9a}
+pairs(Auto)
+```
+
+(b)
+
+```{r 9b}
+cor(subset(Auto, select=-name))
+```
+
+(c)
+
+```{r 9c}
+mod2 <- lm(mpg~.-name, data=Auto)
+summary(mod2)
+```
+
+  i. Yes there's a relationship. F-statistic is above 1 and the p-value is very small.
+  ii. Look at the variable t-value for the correlation. Most have a strong correlation, but cyl, dis, hp, wt are all negative correlations.
+  iii. Given a estimate for year of roughly .75 means that each year the relationship between horsepower and mpg is improving every year. (more fuel efficicent)
+
+(d)
+
+```{r 9d}
+par(mfrow=c(2,2))
+plot(mod2)
+
+plot(predict(mod2), rstudent(mod2))
+```
+
+We can see point 14 has an unproportional amount of leverage on the linearity of our model. The points with greater than 3 residuals is likely ot play an effect too.
+
+(e)
+
+```{r 9e}
+mod3 <- lm(mpg ~ cylinders*displacement + displacement*weight, data=Auto)
+summary(mod3)
+```
+
+Given the t-statistic, we can see the interaction between dis and cyl is between -1 and 0, not significant. The interaction between dis and wt (4.25) is statistically significant.
+
+(f)
+
+```{r 9f}
+mod4 <- lm(log(mpg)~cylinders+displacement+horsepower+weight+acceleration+year+origin, data=Auto)
+summary(mod4)
+par(mfrow=c(2,2))
+plot(mod4)
+plot(predict(mod4), rstudent(mod4))
+```
+
+Again we see that high leverage point (14).
+
+
