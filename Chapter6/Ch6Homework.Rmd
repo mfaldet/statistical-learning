@@ -1,0 +1,146 @@
+---
+title: "Ch6Homework"
+author: "Mac Faldet"
+date: "April 8, 2019"
+output: html_document
+---
+
+# Chapter 6 Homework
+### Questions 2, 5, 9
+
+# 2
+For parts (a) through (c), indicate which of i. through iv. is correct. Justify your answer.
+
+(a). The lasso, relative to least squares, is :
+##  The lasso is less flexible and will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
+
+(b). Repeat (a) for ridge regression relative to least squares:
+##  Same as lasso, ridge regression is less flexible and will give improved prediction accuracy when its increase in bias is less than its decrease in variance.
+
+(c). Repeat (a) for non-linear methods relative to least squares:
+##  Non-linear methods are more flexible and will give improved prediction accuracy when their increase in variance are less than their decrease in bias.
+
+
+
+#5
+It is well-known that ridge regression tends to give similar coefficient values to correlated variables, whereas the lasso may give different coefficient values to correlated variables. We will now explore this property in a very simple setting.
+
+Suppose that n=2, p=2, x11=x12, x21=x22. Furthermore, suppose that y1+y2=0 and x11+x21=0 and x12+x22=0, so that the estimate for the intercept in a least squares, ridge regression, or lasso model is zero : β^0=0.
+
+(a). Write out the ridge regression optimization problem in this setting:(x11=x12=x1 and x21=x22=x2)
+##  The ridge regression problem seeks to minimize.
+
+##  (y1−β^1x1−β^2x1)2+(y2−β^1x2−β^2x2)2+λ(β^21+β^22)
+
+(b). Argue that in this setting, the ridge coefficient estimates satisfy β^1=β^2:
+##  By taking the derivative of the expression above with respect to B1 and B2, you get two expressions that simplify to β^1=β^2
+
+(c). Write out the lasso optimization problem in this setting:(x11=x12=x1 and x21=x22=x2)
+##  The lasso regression seeks to minimize.
+
+##  (y1−β^1x1−β^2x1)2+(y2−β^1x2−β^2x2)2+λ(|β^1|+|β^2|)
+
+(d). Argue that in this setting, the lasso coefficients β^1 and β^2 are not unique; in other words, there are many possible solutions to the optimization problem in (c). Describe these solutions:
+##  Ridge regression geometrically takes the form of a circle/sphere centered along B1 and B2; however, lasso takes the form of a diamond. The distance (s) is the distance of the diamonds vertices along the axes, as well as the edge of the diamond. And many solutions may be found along this edge, where as a sphere would only allow for one solution (one distance from the center; i.e. radius).
+
+
+
+#9
+In this exercise, we will predict the number of applications received using the other variables in the “College” data set.
+
+(a). Split the data set into a training and a test set.
+```{r}
+library(ISLR)
+library(glmnet)
+data(College)
+set.seed(1)
+train = sample(1:dim(College)[1], dim(College)[1] / 2)
+test <- -train
+College.train <- College[train, ]
+College.test <- College[test, ]
+```
+
+(b). Fit a linear model using least squares on the training set, and report the test error obtained.
+```{r}
+fit.lm <- lm(Apps ~ ., data = College.train)
+pred.lm <- predict(fit.lm, College.test)
+mean((pred.lm - College.test$Apps)^2)
+```
+##The test MSE is 1.108531 x 10^(6)
+
+(c). Fit a ridge regression model on the training set, with λ chosen by cross-validation. Report the test error obtained.
+```{r}
+train.mat <- model.matrix(Apps ~ ., data = College.train)
+test.mat <- model.matrix(Apps ~ ., data = College.test)
+grid <- 10 ^ seq(4, -2, length = 100)
+fit.ridge <- glmnet(train.mat, College.train$Apps, alpha = 0, lambda = grid, thresh = 1e-12)
+cv.ridge <- cv.glmnet(train.mat, College.train$Apps, alpha = 0, lambda = grid, thresh = 1e-12)
+bestlam.ridge <- cv.ridge$lambda.min
+bestlam.ridge
+```
+##The best lambda is very small, 0.011. Thus this ridge will behave much like a least squares.
+```{r}
+pred.ridge <- predict(fit.ridge, s = bestlam.ridge, newx = test.mat)
+mean((pred.ridge - College.test$Apps)^2)
+```
+##The test MSE is 1.108512 x 10^(6), lower than least squares.
+
+(d). Fit a lasso model on the training set, with λ chosen by cross-validation. Report the test error obtained, along with the number of non-zero coefficient estimates.
+```{r}
+fit.lasso <- glmnet(train.mat, College.train$Apps, alpha = 1, lambda = grid, thresh = 1e-12)
+cv.lasso <- cv.glmnet(train.mat, College.train$Apps, alpha = 1, lambda = grid, thresh = 1e-12)
+bestlam.lasso <- cv.lasso$lambda.min
+bestlam.lasso
+```
+##The best lamda is 49.77.
+```{r}
+pred.lasso <- predict(fit.lasso, s = bestlam.lasso, newx = test.mat)
+mean((pred.lasso - College.test$Apps)^2)
+```
+##The test MSE was 1.037455 x 10^(6), lower than ridge and least squares.
+```{r}
+predict(fit.lasso, s = bestlam.lasso, type = "coefficients")
+```
+
+(e). Fit a PCR model on the training set, with M chosen by cross-validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r}
+library(pls)
+fit.pcr <- pcr(Apps ~ ., data = College.train, scale = TRUE, validation = "CV")
+validationplot(fit.pcr, val.type = "MSEP")
+```
+```{r}
+pred.pcr <- predict(fit.pcr, College.test, ncomp = 10)
+mean((pred.pcr - College.test$Apps)^2)
+```
+##The test MSE was 1505718, higher than ridge, lasso, and least squares. (as we would expect from components)
+
+(f). Fit a PLS model on the training set, with M chosen by cross-validation. Report the test error obtained, along with the value of M selected by cross-validation.
+```{r}
+fit.pls <- plsr(Apps ~ ., data = College.train, scale = TRUE, validation = "CV")
+validationplot(fit.pls, val.type = "MSEP")
+```
+```{r}
+pred.pls <- predict(fit.pls, College.test, ncomp = 10)
+mean((pred.pls - College.test$Apps)^2)
+```
+##The test MSE for PLS was lower than PCR, but higher than lasso, ridge, and least squares.
+
+(g). Comment on the results obtained. How accurately can we predict the number of college applications received ? Is there much difference among the test errors resulting from these five approaches ?
+
+To compare the results obtained above, we have to compute the test R2 for all models.
+```{r}
+test.avg <- mean(College.test$Apps)
+lm.r2 <- 1 - mean((pred.lm - College.test$Apps)^2) / mean((test.avg - College.test$Apps)^2)
+ridge.r2 <- 1 - mean((pred.ridge - College.test$Apps)^2) / mean((test.avg - College.test$Apps)^2)
+lasso.r2 <- 1 - mean((pred.lasso - College.test$Apps)^2) / mean((test.avg - College.test$Apps)^2)
+pcr.r2 <- 1 - mean((pred.pcr - College.test$Apps)^2) / mean((test.avg - College.test$Apps)^2)
+pls.r2 <- 1 - mean((pred.pls - College.test$Apps)^2) / mean((test.avg - College.test$Apps)^2)
+
+c(test.avg,           lm.r2,      ridge.r2,    lasso.r2,     pcr.r2,      pls.r2)
+```
+##PCR had the lowest predictive accuracy with test scores, but 86% isn't bad compared to our mode/max: 90%
+
+
+
+

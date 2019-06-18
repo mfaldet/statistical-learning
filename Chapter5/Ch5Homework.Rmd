@@ -1,0 +1,209 @@
+---
+title: "Ch5Homework"
+author: "Mac Faldet"
+date: "March 19, 2019"
+output: html_document
+---
+
+
+## Chapter 5 homework
+Questions 2, 5, 6, 8
+
+## 2
+We will now derive the probability that a given observation is part of a bootstrap sample. Suppose that we obtain a bootstrap sample from a set of n observations.
+
+(a) What is the probability that the first bootstrap observation is not the jth observation from the original sample? Justify your answer.
+
+  1 - (1/n); where n is the number of observations (equal distribution of proportions).
+
+(b) What is the probability that the second bootstrap observation is not the jth observation from the original sample?
+
+  1 - (1/n); 
+
+(c) Argue that the probability that the jth observation is not in the bootstrap sample is (1 − 1/n)^n.
+
+(1 - 1/n)^n = (1 - 1/n) x (1 - 1/n) x ...; n times. Which is reasonable given bootstrapping with replacement yeilds independent probabilities.
+
+(d) When n = 5, what is the probability that the jth observation is in the bootstrap sample?
+
+1 - .80^5 = 67%
+
+(e) When n = 100, what is the probability that the jth observation is in the bootstrap sample?
+
+1 - .99^100 = 63.4%
+
+(f) When n = 10,000 what is the probability that the jth observation is in the bootstrap sample?
+
+1 - .9999^10000 = 63.2%
+
+(g) Create a plot that displays, for each integer value of n from 1 to 100, 000, the probability that the jth observation is in the bootstrap sample. Comment on what you observe.
+
+```{r}
+n <- 1:100
+plot(n, 1 - (1 - 1/n)^n)
+```
+I plotted 1:100 to better visualize the asymtote.
+
+
+(h) We will now investigate numerically the probability that a bootstrap sample of size n = 100 contains the jth observation. Here j = 4. We repeatedly create bootstrap samples, and each time we record whether or not the fourth observation is contained in the bootstrap sample.
+
+```{r}
+store <- rep(NA, 10000)
+for (i in 1:10000) {
+    store[i] <- sum(sample(1:100, rep = TRUE) == 4) > 0
+}
+mean(store)
+```
+
+Comment on the results obtained.
+
+As n approaches infinity, 1 - (1/n) = e. Thus 1 - (1/e) = .632
+
+
+## 5
+In Chapter 4, we used logistic regression to predict the probability of default using income and balance on the Default data set. 
+We will now estimate the test error of this logistic regression model using the validation set approach. Do not forget to set a random seed before beginning your analysis.
+
+(a) Fit a logistic regression model that uses income and balance to predict default.
+
+```{r}
+library(ISLR)
+attach(Default)
+set.seed(54321)
+default.mod <- glm(default ~ income + balance, data = Default, family = "binomial")
+summary(default.mod)
+```
+
+(b) Using the validation set approach, estimate the test error of this model. In order to do this, you must perform the following steps:
+  i. Split the sample set into a training set and a validation set.
+```{r}
+train <- sample(dim(Default)[1], dim(Default)[1] / 2)
+```
+  ii. Fit a multiple logistic regression model using only the training observations.
+```{r}
+OOSdefault.mod <- glm(default ~ income + balance, data = Default, family = "binomial", subset = train)
+summary(OOSdefault.mod)
+```
+
+  iii. Obtain a prediction of default status for each individual in the validation set by computing the posterior probability of default for that individual, and classifying the individual to the default category if the posterior probability is greater than 0.5.
+```{r}
+probs <- predict(OOSdefault.mod, newdata = Default[-train, ], type = "response")
+pred.mod <- rep("No", length(probs))
+pred.mod[probs > 0.5] <- "Yes"
+```
+
+  iv. Compute the validation set error, which is the fraction of the observations in the validation set that are misclassified.
+```{r}
+mean(pred.mod != Default[-train, ]$default)
+```
+  
+(c) Repeat the process in (b) three times, using three different splits of the observations into a training set and a validation set. Comment on the results obtained.
+  If you rerun the code chunks above given a different seed, you would recieve a varying error rate around .025 (depending on the specific data that was trained or tested).
+
+
+(d) Now consider a logistic regression model that predicts the probability of default using income, balance, and a dummy variable for student. Estimate the test error for this model using the validation set approach. Comment on whether or not including a dummy variable for student leads to a reduction in the test error
+rate.
+```{r}
+set.seed(54321)
+train <- sample(dim(Default)[1], dim(Default)[1] / 2)
+student.mod <- glm(default ~ income + balance + student, data = Default, family = "binomial", subset = train)
+student.pred <- rep("No", length(probs))
+probs <- predict(student.mod, newdata = Default[-train, ], type = "response")
+student.pred[probs > 0.5] <- "Yes"
+mean(student.pred != Default[-train, ]$default)
+```
+Including the variable `student` made no apparent difference to the standard error rate.
+
+
+## 6
+We continue to consider the use of a logistic regression model to predict the probability of default using income and balance on the Default data set. 
+In particular, we will now compute estimates for the standard errors of the income and balance logistic regression coefficients in two different ways: (1) using the bootstrap, and (2) using the standard formula for computing the standard errors in the glm() function. Do not forget to set a random seed before beginning your analysis.
+
+(a) Using the summary() and glm() functions, determine the estimated standard errors for the coefficients associated with income and balance in a multiple logistic regression model that uses both predictors.
+```{r}
+summary(default.mod)
+```
+Notice the standard error of B0 = .43, B1 = .498e^(5), B2 = .227e^(3)
+
+(b) Write a function, boot.fn(), that takes as input the Default data set as well as an index of the observations, and that outputs the coefficient estimates for income and balance in the multiple logistic regression model.
+```{r}
+boot.fn <- function(data, index) {
+    fit <- glm(default ~ income + balance, data = data, family = "binomial", subset = index)
+    return (coef(fit))
+}
+```
+
+(c) Use the boot() function together with your boot.fn() function to estimate the standard errors of the logistic regression coefficients for income and balance.
+```{r}
+library(boot)
+boot(Default, boot.fn, 1000)
+```
+Notice the standard error of B0 = .43, B1 = .478e^(5), B2 = .228e^(3)
+
+(d) Comment on the estimated standard errors obtained using the glm() function and using your bootstrap function.
+  The estimates for both were practically identical.
+
+## 8
+We will now perform cross-validation on a simulated data set.
+
+(a) Generate a simulated data set as follows:
+```{r}
+set.seed(1)
+y <- rnorm(100)
+x <- rnorm(100)
+y <- x - 2 * x^2 + rnorm(100)
+```
+
+In this data set, what is n and what is p? Write out the model used to generate the data in equation form.
+  n = 100
+  p = 2
+  Y = X - 2X^2 + error
+
+(b) Create a scatterplot of X against Y . Comment on what you find.
+```{r}
+plot(x,y)
+```
+
+(c) Set a random seed, and then compute the LOOCV errors that result from fitting the following four models using least squares:
+  i. Y = β0 + β1X + error
+```{r}
+Data <- data.frame(x, y)
+fit.glm.1 <- glm(y ~ x)
+cv.glm(Data, fit.glm.1)$delta[1]
+```
+
+  ii. Y = β0 + β1X + β2X2 + error
+```{r}
+fit.glm.2 <- glm(y ~ poly(x, 2))
+cv.glm(Data, fit.glm.2)$delta[1]
+```
+
+  iii. Y = β0 + β1X + β2X2 + β3X3 + error
+```{r}
+fit.glm.3 <- glm(y ~ poly(x, 3))
+cv.glm(Data, fit.glm.3)$delta[1]
+```
+
+  iv. Y = β0 + β1X + β2X2 + β3X3 + β4X4 + error
+```{r}
+fit.glm.4 <- glm(y ~ poly(x, 4))
+cv.glm(Data, fit.glm.4)$delta[1]
+```
+
+(d) Repeat (c) using another random seed, and report your results. Are your results the same as what you got in (c)? Why?
+```{r}
+Data <- data.frame(x, y)
+fit.glm.1 <- glm(y ~ x)
+cv.glm(Data, fit.glm.1)$delta[1]
+```
+
+(e) Which of the models in (c) had the smallest LOOCV error? Is this what you expected? Explain your answer.
+  We see that smallest error occurs in fit.glm.2, which seems like the most reasonable fit since the relationship plotted previously was a downward curve.
+
+
+(f) Comment on the statistical significance of the coefficient estimates that results from fitting each of the models in (c) using least squares. Do these results agree with the conclusions drawn based on the cross-validation results?
+```{r}
+summary(fit.glm.4)
+```
+  You can see the linear and quadratic fits are significant (p-value under .05) but the 3rd and 4th squares are not significant (p-value over .05).
+

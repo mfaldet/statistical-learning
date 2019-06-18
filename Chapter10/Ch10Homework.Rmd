@@ -1,0 +1,219 @@
+---
+title: "Ch10Homework"
+author: "Mac Faldet"
+date: "April 28, 2019"
+output: html_document
+---
+
+# Chapter 10 
+## Exercises 1,2,3,7,9,11
+
+
+# 1
+This problem involves K-means clustering algorithm.
+
+(a). Prove (10.12): 2∑i∑jx2ij − 4∑i∑jxijx¯kj + 2∑i∑jx¯2kj  =  1|Ck|∑i,i′∈Ck∑j
+##From 1|Ck|∑i,i′∈Ck∑j we have...
+1|Ck|∑i,i′∈Ck∑j  =  1p(xij−xi′j)2  =  ∑i∑jx2ij − 2∑i∑jxijx¯kj + ∑i∑jx2ij  =  2∑i∑jx2ij − 2|Ck|∑jx¯2kj
+##Also note...
+2∑i∑jx2ij − 4∑i∑jxijx¯kj + 2∑i∑jx¯2kj  =  2∑i∑jx2ij − 2|Ck|∑jx¯2kj
+
+(b). On the basis of this identity, argue that the K-means clustering algorithm decreases the objective (10.11) at each iteration.
+##The identity shows minimizing the sum of the squared Euclidean distance for each cluster is the same as minimizing the within-cluster variance for each cluster. Thus minimizing the directly correlated objective after each assigned variable.
+
+
+# 2
+Suppose that we have four observations, for which we compute a dissimilarity matrix, given by
+
+ |       0.3   0.4   0.7 |
+ | 0.3         0.5   0.8 |
+ | 0.4   0.5         .45 |
+ | 0.7   0.8   .45       |
+  
+For instance, the dissimilarity between the first and second observations is 0.3, and the dissimilarity between the second and fourth observations is 0.8.
+
+(a). On the basis of this dissimilarity matrix, sketch the dendrogram that results from hierarchically clustering these four observations using complete linkage. Be sure to indicate on the plot the height at which each fusion occurs, as well as the observations corresponding to each leaf in the dendrogram.
+```{r}
+dendro = as.dist(matrix(c(0, 0.3, 0.4, 0.7, 
+                     0.3, 0, 0.5, 0.8,
+                     0.4, 0.5, 0.0, 0.45,
+                     0.7, 0.8, 0.45, 0.0), nrow = 4))
+plot(hclust(dendro, method = "complete"))
+```
+##Note from the dissim matrix above, 0.3 is the minimum dissimilarity. So if we fuse obs1 and obs2 together, we would see a cluster (1,2) with a dissim height of 0.3, and the same dissim matrix without the 1st column/ 1st row. Respeating the process forms the cluster you see in the dendrogram.
+
+(b). Repeat (a), this time using simple linkage clustering.
+```{r}
+plot(hclust(dendro, method = "single"))
+```
+##After clustering (1,2) as before, single link leaves us with a dissimilary matrix of .4  .7  and .45, leaving .4 as the minimum and joining obs3 to the cluster (1,2)
+
+
+# 3
+In this problem, you will perform K-means clustering manually, with K=2, on a small example with n=6 observations and p=2 features. The observations are as follows.
+  Obs.| X1  X2
+   1  |  1   4
+   2  |  1   3
+   3  |  0   4
+   4  |  5   1
+   5  |  6   2
+   6  |  4   0
+
+(a). Plot the observations
+```{r}
+x <- cbind(c(1, 1, 0, 5, 6, 4), c(4, 3, 4, 1, 2, 0))
+plot(x[,1], x[,2])
+```
+
+(b). Randomly assign a cluster label to each observation. Report the cluster labels for each observation.
+```{r}
+set.seed(1)
+labels <- sample(2, nrow(x), replace = T)
+labels
+```
+```{r}
+plot(x[, 1], x[, 2], col = (labels + 1), pch = 20, cex = 2)
+```
+
+(c). Compute the centroid for each cluster.
+```{r}
+centroid1 <- c(mean(x[labels == 1, 1]), mean(x[labels == 1, 2]))
+centroid2 <- c(mean(x[labels == 2, 1]), mean(x[labels == 2, 2]))
+plot(x[,1], x[,2], col=(labels + 1), pch = 20, cex = 2)
+points(centroid1[1], centroid1[2], col = 2, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+```
+
+(d). Assign each observation to the centroid to which it is closest, in terms of Euclidean distance. Report the cluster labels for each observation.
+```{r}
+labels <- c(1, 1, 1, 2, 2, 2)
+plot(x[, 1], x[, 2], col = (labels + 1), pch = 20, cex = 2)
+points(centroid1[1], centroid1[2], col = 2, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+```
+
+(e). Repeat until the centroid have stopped moving.
+```{r}
+centroid1 <- c(mean(x[labels == 1, 1]), mean(x[labels == 1, 2]))
+centroid2 <- c(mean(x[labels == 2, 1]), mean(x[labels == 2, 2]))
+plot(x[,1], x[,2], col=(labels + 1), pch = 20, cex = 2)
+points(centroid1[1], centroid1[2], col = 2, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+```
+
+(f). In your plot from (a), color the observations according to the clusters labels obtained.
+```{r}
+plot(x[, 1], x[, 2], col=(labels + 1), pch = 20, cex = 2)
+```
+
+
+
+# 7
+In the chapter, we mentioned the use of correlation-based distance and Euclidean distance as dissimilarity measures for hierarchical clustering. It turns out that these two measures are almost equivalent : if each observation has been centered to have mean zero and standard deviation one, and if we let rij denote the correlation between the ith and jth observations, then the quantity 1−rij is proportional to the squared Euclidean distance between the ith and jth observations. 
+On the “USArrests” data, show that this proportionality holds.
+```{r}
+library(ISLR)
+set.seed(1)
+dsc <- scale(USArrests)
+d1 <- dist(dsc)^2
+d2 <- as.dist(1 - cor(t(dsc)))
+summary(d2 / d1)
+```
+
+
+
+# 8
+In Section 10.2.3, a formula for calculating PVE was given in Equation 10.8. We also saw that the PVE can be obtained using the “sdev” output of the “prcomp()” function. On the “USArrests” data, calculate PVE in two ways :
+
+(a). Using the “sdev” output of the “prcomp()” function, as was done in Section 10.2.3.
+```{r}
+pr.out <- prcomp(USArrests, scale = TRUE)
+pr.var <- pr.out$sdev^2
+pve <- pr.var / sum(pr.var)
+sum(pr.var)
+```
+```{r}
+pve
+```
+
+(b). By applying Equation 10.8 directly. That is, use the “prcomp()” function to compute the principal component loadings. Then, use those loadings in Equation 10.8 to obtain the PVE.
+```{r}
+loadings <- pr.out$rotation
+USArrests2 <- scale(USArrests)
+sumvar <- sum(apply(as.matrix(USArrests2)^2, 2, sum))
+apply((as.matrix(USArrests2) %*% loadings)^2, 2, sum) / sumvar
+```
+
+
+
+# 9
+Consider the “USArrests” data. We will now perform hierarchical clustering on the states.
+
+(a). Using hierarchical clustering with complete linkage and Euclidean distance, cluster the states.
+```{r}
+set.seed(2)
+hc.complete <- hclust(dist(USArrests), method = "complete")
+plot(hc.complete)
+```
+
+(b). Cut the dendrogram at a height that results in three distinct clusters. Which states belong to which clusters?
+```{r}
+cutree(hc.complete, 3)
+```
+
+(c). Hierachically cluster the states using complete linkage and Euclidean distance, after scaling the variables to have standard deviation one.
+```{r}
+sd.data <- scale(USArrests)
+hc.complete.sd <- hclust(dist(sd.data), method = "complete")
+plot(hc.complete.sd)
+```
+
+(d). What effect does scaling the variables have on the hierarchical clustering obtained ? In your opinion, should the variables be scaled before the inter-observation dissimilarities are computed ? Provide a justification for your answer.
+```{r}
+cutree(hc.complete.sd, 3)
+```
+```{r}
+table(cutree(hc.complete, 3), cutree(hc.complete.sd, 3))
+```
+##It is important to scale your variables before processing them in a model, such as heirarichal clustering. Standarding variables after processing the model will have different effects.
+
+
+
+# 11
+On the book website, there is a gene expression data set that consists of 40 tissue samples with measurements on 1000 genes. The first 20 samples are from healthy patients, while the second 20 are from a diseased group.
+
+(a). Load the data using “read.csv()”. You will need to select “header = F”.
+```{r}
+genes <- read.csv("Ch10Ex11.csv", header = FALSE)
+```
+
+(b). Apply hierarchical clustering to the samples using correlation-based distance, and plot the dendrogram. Do the genes separate the samples into two groups ? Do your results depend on the type of linkage used ?
+```{r}
+hc.complete <- hclust(as.dist(1 - cor(genes)), method = "complete")
+plot(hc.complete)
+```
+
+```{r}
+hc.single <- hclust(as.dist(1 - cor(genes)), method = "single")
+plot(hc.single)
+```
+
+```{r}
+hc.average <- hclust(as.dist(1 - cor(genes)), method = "average")
+plot(hc.average)
+```
+
+(c). Your collaborator wants to know which genes differ the most across the two groups. Suggest a way to answer this question, and apply it here.
+
+We may use PCA to see which genes differ the most. We will examine the absolute values of the total loadings for each gene as it characterizes the weight of each gene.
+```{r}
+pr.out <- prcomp(t(genes))
+head(pr.out$rotation)
+```
+
+```{r}
+total.load <- apply(pr.out$rotation, 1, sum)
+index <- order(abs(total.load), decreasing = TRUE)
+index[1:10]
+```
+
